@@ -7,10 +7,22 @@ ARG GIT_DESCRIBE
 # WORKDIR /go/src/github.com/hashicorp/consul
 ENV CONSUL_DEV=1
 ENV COLORIZE=0
-Add . /go/src/github.com/hashicorp/consul/
+
+# cache modules separately
+COPY go.mod .
+COPY go.sum .
+RUN mkdir -p api sdk
+COPY api/go.mod api
+COPY api/go.sum api
+COPY sdk/go.mod sdk
+COPY sdk/go.sum sdk
+RUN go mod download
+
+# add the rest of the code
+ADD . /consul/
 RUN make dev
 
 
 FROM consul:latest
 
-COPY --from=builder /go/src/github.com/hashicorp/consul/bin/consul /bin
+COPY --from=builder /go/bin/consul /bin
